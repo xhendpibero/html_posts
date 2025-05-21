@@ -432,6 +432,7 @@ body {
   }
 
   .navbar-toggler {
+    margin-left: auto;
     padding: 0.25rem 0.5rem;
     background-color: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -489,6 +490,7 @@ body {
   font-weight: 700;
   color: white;
   letter-spacing: 0.5px;
+  vertical-align: middle;
 }
 
 /* Custom Tooltip */
