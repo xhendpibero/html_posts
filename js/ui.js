@@ -253,4 +253,30 @@ class UI {
         if (text.length <= maxLength) return text;
         return text.substring(0, maxLength) + '...';
     }
+    
+    static initTooltips() {
+        // For mobile devices, convert tooltips to click rather than hover
+        if (window.innerWidth < 768) {
+            const tooltips = document.querySelectorAll('.custom-tooltip');
+            tooltips.forEach(tooltip => {
+                tooltip.addEventListener('click', function(e) {
+                    // Toggle active class to show/hide tooltip
+                    const currentActive = document.querySelector('.custom-tooltip.active');
+                    if (currentActive && currentActive !== this) {
+                        currentActive.classList.remove('active');
+                    }
+                    this.classList.toggle('active');
+                    e.stopPropagation();
+                });
+            });
+            
+            // Hide tooltips when clicking elsewhere
+            document.addEventListener('click', function() {
+                const activeTooltip = document.querySelector('.custom-tooltip.active');
+                if (activeTooltip) {
+                    activeTooltip.classList.remove('active');
+                }
+            });
+        }
+    }
 }

@@ -1,93 +1,544 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Posts - JSONPlaceholder Viewer</title>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; font-src 'self' https://cdn.jsdelivr.net; img-src 'self' data:; connect-src https://jsonplaceholder.typicode.com">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
-    <link rel="stylesheet" href="css/styles.css">
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="#">JSONPlaceholder Viewer</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; font-src 'self' https://cdn.jsdelivr.net; img-src 'self' data:; connect-src https://jsonplaceholder.typicode.com"
+    />
+    <link rel="icon" href="img/icon.png" type="image/png" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <!-- Header Section -->
+    <header class="site-header">
+      <div class="container">
+        <div class="row align-items-center py-3">
+          <div class="col-md-3 col-6">
+            <a href="index.html" class="logo-link">
+              <div class="logo">
+                <img src="img/logo.png" alt="JSONPlaceholder Viewer Logo" />
+              </div>
+            </a>
+          </div>
+          <div class="col-md-9 col-6">
+            <nav class="navbar navbar-expand-md p-0">
+              <button
+                class="navbar-toggler d-md-none float-end"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#mainNav"
+                aria-controls="mainNav"
+                aria-expanded="false"
+                aria-label="Toggle navigation"
+              >
                 <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item"><a class="nav-link active" href="index.html">Posts</a></li>
-                    <li class="nav-item"><a class="nav-link" href="reports.html">Reports</a></li>
+              </button>
+              <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav ms-auto">
+                  <li class="nav-item">
+                    <a href="index.html" class="nav-link active">
+                      <i class="bi bi-file-earmark-text me-1"></i> Posts
+                    </a>
+                  </li>
+                  <li class="nav-item">
+                    <a href="reports.html" class="nav-link">
+                      <i class="bi bi-bar-chart-line me-1"></i> Reports
+                    </a>
+                  </li>
                 </ul>
-            </div>
+              </div>
+            </nav>
+          </div>
         </div>
-    </nav>
+      </div>
+    </header>
 
-    <div class="container mt-4">
-        <h1>Posts</h1>
-        
-        <div class="card mb-4">
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-10">
-                        <input type="text" id="search-input" class="form-control" placeholder="Search posts..." maxlength="100">
-                    </div>
-                    <div class="col-md-2">
-                        <button id="search-btn" class="btn btn-primary w-100">Search</button>
-                    </div>
-                </div>
-            </div>
+    <!-- Page banner -->
+    <div class="page-banner bg-primary text-white py-4">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-8">
+            <h1 class="page-title mb-1">Posts</h1>
+            <p class="lead mb-0">
+              Browse and search posts from JSONPlaceholder API
+            </p>
+          </div>
+          <div class="col-md-4 d-flex align-items-center justify-content-end">
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0 bg-transparent">
+                <li class="breadcrumb-item">
+                  <a href="index.html" class="text-white">Home</a>
+                </li>
+                <li
+                  class="breadcrumb-item active text-white"
+                  aria-current="page"
+                >
+                  Posts
+                </li>
+              </ol>
+            </nav>
+          </div>
         </div>
-
-        <div class="alert alert-danger" id="error-alert" style="display: none;"></div>
-
-        <div class="table-responsive">
-            <table class="table table-striped table-hover">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>User ID</th>
-                        <th>Title</th>
-                        <th>Body</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="posts-table-body">
-                    <!-- Posts will be populated here -->
-                </tbody>
-            </table>
-        </div>
-
-        <div id="pagination-controls" class="mt-3">
-            <!-- Pagination controls will be added here -->
-        </div>
-
-        <div id="loading" class="text-center">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-        </div>
-
-        <!-- Modal for comments -->
-        <div class="modal fade" id="commentsModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Comments for Post #<span id="modal-post-id"></span></h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div id="comments-container"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
+    <!-- Main Content -->
+    <div class="container my-5">
+      <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-10">
+              <div class="input-group">
+                <span class="input-group-text bg-light"
+                  ><i class="bi bi-search"></i
+                ></span>
+                <input
+                  type="text"
+                  id="search-input"
+                  class="form-control"
+                  placeholder="Search posts..."
+                  maxlength="100"
+                />
+              </div>
+            </div>
+            <div class="col-md-2">
+              <button id="search-btn" class="btn btn-primary w-100">
+                <i class="bi bi-filter me-2"></i>Search
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert alert-danger d-none" id="error-alert"></div>
+
+      <div class="card shadow-sm">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-striped table-hover mb-0">
+              <thead class="bg-light">
+                <tr>
+                  <th>ID</th>
+                  <th>User ID</th>
+                  <th>Title</th>
+                  <th>Body</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="posts-table-body">
+                <!-- Posts will be populated here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="pagination-controls" class="mt-4 d-flex justify-content-center">
+        <!-- Pagination controls will be added here -->
+      </div>
+
+      <div id="loading" class="text-center py-5 d-none">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Loading posts...</p>
+      </div>
+
+      <!-- Modal for comments -->
+      <div
+        class="modal fade"
+        id="commentsModal"
+        tabindex="-1"
+        aria-hidden="true"
+      >
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">
+                Comments for Post #<span id="modal-post-id"></span>
+              </h5>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+            <div class="modal-body">
+              <div id="comments-container"></div>
+            </div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                data-bs-dismiss="modal"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- View Details Modal -->
+      <div
+        class="modal fade"
+        id="viewDetailsModal"
+        tabindex="-1"
+        aria-hidden="true"
+      >
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+              <h5 class="modal-title">
+                Post Details #<span id="view-post-id"></span>
+              </h5>
+              <button
+                type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+            <div class="modal-body">
+              <div class="row">
+                <div class="col-md-8">
+                  <div class="post-details-content">
+                    <h4 id="view-post-title" class="mb-3"></h4>
+                    <div class="post-meta mb-3">
+                      <span class="badge bg-secondary me-2"
+                        >User ID: <span id="view-post-user-id"></span
+                      ></span>
+                      <span class="badge bg-info text-dark"
+                        >Post ID: <span id="view-post-id-badge"></span
+                      ></span>
+                    </div>
+                    <div class="card mb-3">
+                      <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">
+                          Post Content
+                        </h6>
+                        <p id="view-post-body" class="card-text"></p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card bg-light">
+                    <div class="card-body">
+                      <h6 class="card-title">Actions</h6>
+                      <div class="d-grid gap-2">
+                        <button class="btn btn-info" id="view-comments-btn">
+                          <i class="bi bi-chat-dots me-2"></i> View Comments
+                        </button>
+                        <button class="btn btn-warning" id="view-edit-btn">
+                          <i class="bi bi-pencil me-2"></i> Edit Post
+                        </button>
+                        <button class="btn btn-danger" id="view-delete-btn">
+                          <i class="bi bi-trash me-2"></i> Delete Post
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                data-bs-dismiss="modal"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit Post Modal -->
+      <div
+        class="modal fade"
+        id="editPostModal"
+        tabindex="-1"
+        aria-hidden="true"
+      >
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+              <h5 class="modal-title">
+                Edit Post #<span id="edit-post-id"></span>
+              </h5>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+            <div class="modal-body">
+              <form id="edit-post-form">
+                <div class="mb-3">
+                  <label for="edit-title" class="form-label">Title</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="edit-title"
+                    required
+                    maxlength="100"
+                  />
+                </div>
+                <div class="mb-3">
+                  <label for="edit-body" class="form-label">Content</label>
+                  <textarea
+                    class="form-control"
+                    id="edit-body"
+                    rows="5"
+                    required
+                  ></textarea>
+                </div>
+                <div
+                  class="alert alert-success d-none"
+                  id="edit-success-message"
+                >
+                  <i class="bi bi-check-circle-fill me-2"></i> Post updated
+                  successfully!
+                </div>
+              </form>
+            </div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                data-bs-dismiss="modal"
+              >
+                Cancel
+              </button>
+              <button type="button" class="btn btn-warning" id="save-edit-btn">
+                <i class="bi bi-save me-1"></i> Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delete Confirmation Modal -->
+      <div
+        class="modal fade"
+        id="deleteConfirmModal"
+        tabindex="-1"
+        aria-hidden="true"
+      >
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+              <h5 class="modal-title">Confirm Deletion</h5>
+              <button
+                type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+            <div class="modal-body">
+              <div class="text-center mb-3">
+                <i
+                  class="bi bi-exclamation-triangle text-warning"
+                  style="font-size: 3rem"
+                ></i>
+              </div>
+              <p>
+                Are you sure you want to delete post #<span
+                  id="delete-post-id"
+                ></span
+                >?
+              </p>
+              <p class="text-muted small">This action cannot be undone.</p>
+
+              <div
+                class="alert alert-success d-none"
+                id="delete-success-message"
+              >
+                <i class="bi bi-check-circle-fill me-2"></i> Post deleted
+                successfully! This is just an example delete action.
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                data-bs-dismiss="modal"
+              >
+                <i class="bi bi-x-circle me-1"></i> Keep It
+              </button>
+              <button
+                type="button"
+                class="btn btn-danger"
+                id="confirm-delete-btn"
+              >
+                <i class="bi bi-trash me-1"></i> Yes, Delete It
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Section -->
+    <footer class="site-footer mt-5 pt-5 pb-3 bg-dark text-white">
+      <div class="container">
+        <div class="row">
+          <div class="col-lg-4 mb-4">
+            <div class="footer-logo mb-3">
+              <img
+                src="img/icon.png"
+                alt="JSONPlaceholder Icon"
+                width="40"
+                height="40"
+                class="me-2"
+              />
+              <span class="logo-text"
+                >JSONPlaceholder<span class="text-primary">Viewer</span></span
+              >
+            </div>
+            <p class="mb-3">
+              A lightweight web application that interacts with the
+              JSONPlaceholder API to display posts and reports. Built with
+              modern web technologies and best practices.
+            </p>
+            <div class="social-links">
+              <a
+                href="https://linkedin.com/in/dendysaptoadi"
+                target="_blank"
+                class="social-link"
+                aria-label="LinkedIn"
+                ><i class="bi bi-linkedin"></i
+              ></a>
+              <a
+                href="https://github.com/xhendpibero"
+                target="_blank"
+                class="social-link"
+                aria-label="GitHub"
+                ><i class="bi bi-github"></i
+              ></a>
+              <a
+                href="https://xhendpibero.github.io/"
+                target="_blank"
+                class="social-link"
+                aria-label="Portfolio"
+                ><i class="bi bi-globe"></i
+              ></a>
+              <a
+                href="mailto:dendysaptoadi160@gmail.com"
+                class="social-link"
+                aria-label="Email"
+                ><i class="bi bi-envelope"></i
+              ></a>
+            </div>
+          </div>
+          <div class="col-lg-2 col-md-3 col-sm-6 mb-4">
+            <h5 class="footer-heading">Navigation</h5>
+            <ul class="footer-links">
+              <li><a href="index.html">Posts</a></li>
+              <li><a href="reports.html">Reports</a></li>
+              <li>
+                <a href="https://xhendpibero.github.io/" target="_blank"
+                  >My Portfolio</a
+                >
+              </li>
+            </ul>
+          </div>
+          <div class="col-lg-3 col-md-3 col-sm-6 mb-4">
+            <h5 class="footer-heading">Technologies</h5>
+            <ul class="footer-links">
+              <li>
+                <a href="https://jsonplaceholder.typicode.com/" target="_blank"
+                  >JSONPlaceholder API</a
+                >
+              </li>
+              <li>
+                <span class="text-light opacity-75"
+                  ><i class="bi bi-code-slash me-1"></i> JavaScript / HTML /
+                  CSS</span
+                >
+              </li>
+              <li>
+                <span class="text-light opacity-75"
+                  ><i class="bi bi-bootstrap me-1"></i> Bootstrap
+                  Framework</span
+                >
+              </li>
+              <li>
+                <span class="text-light opacity-75"
+                  ><i class="bi bi-speedometer2 me-1"></i> RESTful API
+                  Integration</span
+                >
+              </li>
+            </ul>
+          </div>
+          <div class="col-lg-3 col-md-6 mb-4">
+            <h5 class="footer-heading">Developer Profile</h5>
+            <div class="dev-profile">
+              <h6 class="mb-1 text-primary">Dendy Sapto Adi</h6>
+              <p class="mb-1 small opacity-75">Senior Frontend Engineer</p>
+              <hr class="my-2 border-secondary opacity-25" />
+              <address class="mb-0 small">
+                <p class="mb-1">
+                  <i class="bi bi-geo-alt me-2"></i> Jl Celepuk 1 Ujung, Kota
+                  Bekasi, Jawa Barat, ID
+                </p>
+                <p class="mb-1">
+                  <i class="bi bi-envelope me-2"></i> dendysaptoadi160@gmail.com
+                </p>
+                <p class="mb-1">
+                  <i class="bi bi-telephone me-2"></i> +62 896-0258-9896
+                </p>
+              </address>
+            </div>
+          </div>
+        </div>
+        <hr class="mt-4 mb-3 border-secondary" />
+        <div class="row">
+          <div class="col-md-6 text-center text-md-start">
+            <p class="mb-0">
+              &copy; 2023 JSONPlaceholder Viewer, All Rights Reserved.
+            </p>
+          </div>
+          <div class="col-md-6 text-center text-md-end">
+            <p class="mb-0">
+              Designed & Developed by
+              <a
+                href="https://xhendpibero.github.io/"
+                target="_blank"
+                class="text-primary"
+                >Dendy Sapto Adi</a
+              >
+            </p>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
+      crossorigin="anonymous"
+    ></script>
     <script src="js/api.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/posts.js"></script>
-</body>
+  </body>
 </html>
