@@ -65,18 +65,6 @@ class ApiService {
         }
         return this.fetchData(`/posts/${postId}/comments`);
     }
-
-    /**
-     * Get user data
-     * @param {number} userId - ID of the user
-     * @returns {Promise<Object>} - User data
-     */
-    async getUser(userId) {
-        if (!userId || isNaN(parseInt(userId))) {
-            throw new Error('Invalid user ID');
-        }
-        return this.fetchData(`/users/${userId}`);
-    }
 }
 
 const api = new ApiService('https://jsonplaceholder.typicode.com');
