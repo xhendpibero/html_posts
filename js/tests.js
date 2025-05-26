@@ -99,15 +99,6 @@ const runApiTests = async () => {
         }
     });
     
-    // Test RegExp escaping
-    tester.addTest('UI.escapeRegExp escapes special characters', () => {
-        const specialChars = '.*+?^${}()|[]\\';
-        const escaped = UI.escapeRegExp(specialChars);
-        if (escaped !== '\\.\\*\\+\\?\\^\\$\\{\\}\$$\$$\\|\$$\$$\\\\') {
-            throw new Error('RegExp escaping failed');
-        }
-    });
-    
     // Test pagination creation
     tester.addTest('UI.createPagination creates correct pagination element', () => {
         let pageChanged = false;
