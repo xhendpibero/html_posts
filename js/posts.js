@@ -255,6 +255,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     UI.initTooltips();
     renderPagination(totalPages);
   };
+
   /**
    * Render pagination controls
    * @param {number} totalPages - Total number of pages
@@ -332,9 +333,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       bodyCell.appendChild(bodyTooltip);
 
       // Actions cell with multiple buttons
-      const actionsCell = UI.createElement("td", {
-        class: "d-flex",
-      });
+      const actionsCell = UI.createElement("td", {});
 
       // Comments button with icon and tooltip
       const viewCommentsBtn = UI.createElement("button", {

@@ -8,6 +8,7 @@ body {
 /* Highlight for "rerum" containing posts */
 .highlight {
   background-color: #ffff99;
+  color: black;
   font-weight: bold;
   padding: 0 2px;
   border-radius: 2px;
@@ -20,7 +21,6 @@ body {
 /* Post body text styling */
 .post-body {
   max-width: 400px;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -497,6 +497,7 @@ body {
 .custom-tooltip {
   position: relative;
   cursor: pointer;
+  overflow: visible;
 }
 
 .custom-tooltip .tooltip-content {
@@ -509,16 +510,19 @@ body {
   padding: 10px;
   position: absolute;
   z-index: 1000;
-  bottom: 125%;
+  bottom: 0%;
   left: 50%;
   transform: translateX(-50%);
+  height: 20px;
   opacity: 0;
-  transition: opacity 0.3s, visibility 0.3s;
+  transition: opacity 0.3s, visibility 0.3s, height 0.3s;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
   font-size: 0.9rem;
   line-height: 1.5;
   max-height: 200px;
   overflow-y: auto;
+  overflow-x: hidden;
+  text-wrap: auto;
 }
 
 .custom-tooltip .tooltip-content::after {
@@ -535,6 +539,7 @@ body {
 .custom-tooltip:hover .tooltip-content {
   visibility: visible;
   opacity: 1;
+  height: 100px;
 }
 
 /* Action Button Styling */
