@@ -64,6 +64,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             userStatsMap[userId].totalPosts++;
             
             // Check if post contains the keyword - do this only once
+            // will updated this line if condition more than 1 reports
             const containsRerum = post.body.toLowerCase().includes(keyword);
             if (containsRerum) {
                 rerumPostsCount++;
@@ -73,7 +74,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         return {
             rerumPostsCount,
-            userStatsData: Object.values(userStatsMap)
+            userStatsData: Object.values(userStatsMap),
+            // report 1,
+            // report 2,
+            // report 3,
+            // report 4,
         };
     };
     
