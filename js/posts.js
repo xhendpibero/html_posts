@@ -1,94 +1,136 @@
 /**
- * Posts page functionality
+ * Posts page functionality - Refactored for performance and maintainability
  */
 document.addEventListener("DOMContentLoaded", async () => {
   // Constants
   const ITEMS_PER_PAGE = 10;
   const KEYWORD_HIGHLIGHT = "rerum";
 
-  // DOM elements
-  const searchInput = document.getElementById("search-input");
-  const searchBtn = document.getElementById("search-btn");
-  const postsTableBody = document.getElementById("posts-table-body");
-  const paginationControls = document.getElementById("pagination-controls");
-
   // State
-  let allPosts = [];
-  let filteredPosts = [];
-  let currentPage = 1;
+  const state = {
+    allPosts: [],
+    filteredPosts: [],
+    currentPage: 1,
+    selectedPostId: null,
+  };
 
-  // Bootstrap modal instance
-  let commentsModal;
+  // DOM Elements Cache - centralized for better performance
+  const elements = {
+    // Main elements
+    searchInput: document.getElementById("search-input"),
+    searchBtn: document.getElementById("search-btn"),
+    postsTableBody: document.getElementById("posts-table-body"),
+    paginationControls: document.getElementById("pagination-controls"),
 
-  // Initialize the modal
-  const modalElement = document.getElementById("commentsModal");
-  if (modalElement) {
-    commentsModal = new bootstrap.Modal(modalElement);
-  }
+    // Modals
+    modals: {
+      comments: {
+        element: document.getElementById("commentsModal"),
+        instance: null,
+        postIdElement: document.getElementById("modal-post-id"),
+        commentsContainer: document.getElementById("comments-container"),
+      },
+      viewDetails: {
+        element: document.getElementById("viewDetailsModal"),
+        instance: null,
+        postId: document.getElementById("view-post-id"),
+        postIdBadge: document.getElementById("view-post-id-badge"),
+        userId: document.getElementById("view-post-user-id"),
+        title: document.getElementById("view-post-title"),
+        body: document.getElementById("view-post-body"),
+      },
+      editPost: {
+        element: document.getElementById("editPostModal"),
+        instance: null,
+        postId: document.getElementById("edit-post-id"),
+        title: document.getElementById("edit-title"),
+        body: document.getElementById("edit-body"),
+        successMessage: document.getElementById("edit-success-message"),
+        saveBtn: document.getElementById("save-edit-btn"),
+      },
+      deleteConfirm: {
+        element: document.getElementById("deleteConfirmModal"),
+        instance: null,
+        postId: document.getElementById("delete-post-id"),
+        successMessage: document.getElementById("delete-success-message"),
+        confirmBtn: document.getElementById("confirm-delete-btn"),
+      },
+    },
 
-  // Initialize all modals
-  let viewDetailsModal, editPostModal, deleteConfirmModal;
+    // Modal buttons
+    buttons: {
+      viewComments: document.getElementById("view-comments-btn"),
+      viewEdit: document.getElementById("view-edit-btn"),
+      viewDelete: document.getElementById("view-delete-btn"),
+    },
+  };
 
-  // Setup all modals
-  const setupModals = () => {
-    const viewDetailsElement = document.getElementById("viewDetailsModal");
-    const editPostElement = document.getElementById("editPostModal");
-    const deleteConfirmElement = document.getElementById("deleteConfirmModal");
+  // Initialize all Bootstrap modals
+  const initModals = () => {
+    // Create modal instances
+    Object.values(elements.modals).forEach((modal) => {
+      if (modal.element) {
+        modal.instance = new bootstrap.Modal(modal.element);
+      }
+    });
+  };
 
-    if (viewDetailsElement) {
-      viewDetailsModal = new bootstrap.Modal(viewDetailsElement);
-    }
-    if (editPostElement) {
-      editPostModal = new bootstrap.Modal(editPostElement);
-    }
-    if (deleteConfirmElement) {
-      deleteConfirmModal = new bootstrap.Modal(deleteConfirmElement);
-    }
-
-    // Set up event listeners for modal actions
-    const viewCommentsBtn = document.getElementById("view-comments-btn");
-    const viewEditBtn = document.getElementById("view-edit-btn");
-    const viewDeleteBtn = document.getElementById("view-delete-btn");
-    const saveEditBtn = document.getElementById("save-edit-btn");
-    const confirmDeleteBtn = document.getElementById("confirm-delete-btn");
-
-    if (viewCommentsBtn) {
-      viewCommentsBtn.addEventListener("click", () => {
-        const postId = document.getElementById("view-post-id").textContent;
-        viewDetailsModal.hide();
+  // Setup all modal event listeners
+  const setupModalEvents = () => {
+    // View comments button in details modal
+    if (elements.buttons.viewComments) {
+      elements.buttons.viewComments.addEventListener("click", () => {
+        const postId = elements.modals.viewDetails.postId.textContent;
+        elements.modals.viewDetails.instance.hide();
         loadComments(postId);
       });
     }
 
-    if (viewEditBtn) {
-      viewEditBtn.addEventListener("click", () => {
-        const postId = document.getElementById("view-post-id").textContent;
-        const post = allPosts.find((p) => p.id.toString() === postId);
+    // Edit button in details modal
+    if (elements.buttons.viewEdit) {
+      elements.buttons.viewEdit.addEventListener("click", () => {
+        const postId = elements.modals.viewDetails.postId.textContent;
+        const post = findPostById(postId);
         if (post) {
-          viewDetailsModal.hide();
+          elements.modals.viewDetails.instance.hide();
           showEditPostModal(post);
         }
       });
     }
 
-    if (viewDeleteBtn) {
-      viewDeleteBtn.addEventListener("click", () => {
-        const postId = document.getElementById("view-post-id").textContent;
-        const post = allPosts.find((p) => p.id.toString() === postId);
+    // Delete button in details modal
+    if (elements.buttons.viewDelete) {
+      elements.buttons.viewDelete.addEventListener("click", () => {
+        const postId = elements.modals.viewDetails.postId.textContent;
+        const post = findPostById(postId);
         if (post) {
-          viewDetailsModal.hide();
+          elements.modals.viewDetails.instance.hide();
           showDeleteConfirmation(post);
         }
       });
     }
 
-    if (saveEditBtn) {
-      saveEditBtn.addEventListener("click", savePostEdit);
+    // Save edit button
+    if (elements.modals.editPost.saveBtn) {
+      elements.modals.editPost.saveBtn.addEventListener("click", savePostEdit);
     }
 
-    if (confirmDeleteBtn) {
-      confirmDeleteBtn.addEventListener("click", confirmPostDelete);
+    // Confirm delete button
+    if (elements.modals.deleteConfirm.confirmBtn) {
+      elements.modals.deleteConfirm.confirmBtn.addEventListener(
+        "click",
+        confirmPostDelete
+      );
     }
+  };
+
+  /**
+   * Find a post by its ID
+   * @param {string|number} postId - The post ID to find
+   * @returns {Object|null} - The found post or null
+   */
+  const findPostById = (postId) => {
+    return state.allPosts.find((p) => p.id.toString() === postId.toString());
   };
 
   /**
@@ -96,18 +138,18 @@ document.addEventListener("DOMContentLoaded", async () => {
    * @param {Object} post - Post object
    */
   const showPostDetails = (post) => {
-    document.getElementById("view-post-id").textContent = post.id;
-    document.getElementById("view-post-id-badge").textContent = post.id;
-    document.getElementById("view-post-user-id").textContent = post.userId;
-    document.getElementById("view-post-title").textContent = post.title;
+    const modal = elements.modals.viewDetails;
 
-    const postBodyElement = document.getElementById("view-post-body");
-    postBodyElement.innerHTML = UI.highlightText(
+    modal.postId.textContent = post.id;
+    modal.postIdBadge.textContent = post.id;
+    modal.userId.textContent = post.userId;
+    modal.title.textContent = post.title;
+    modal.body.innerHTML = UI.highlightText(
       UI.sanitizeHTML(post.body),
       KEYWORD_HIGHLIGHT
     );
 
-    viewDetailsModal.show();
+    modal.instance.show();
   };
 
   /**
@@ -115,23 +157,24 @@ document.addEventListener("DOMContentLoaded", async () => {
    * @param {Object} post - Post object
    */
   const showEditPostModal = (post) => {
-    document.getElementById("edit-post-id").textContent = post.id;
-    document.getElementById("edit-title").value = post.title;
-    document.getElementById("edit-body").value = post.body;
+    const modal = elements.modals.editPost;
 
-    // Hide success message if shown previously
-    document.getElementById("edit-success-message").classList.add("d-none");
+    modal.postId.textContent = post.id;
+    modal.title.value = post.title;
+    modal.body.value = post.body;
+    modal.successMessage.classList.add("d-none");
 
-    editPostModal.show();
+    modal.instance.show();
   };
 
   /**
    * Save post edits
    */
   const savePostEdit = () => {
-    const postId = document.getElementById("edit-post-id").textContent;
-    const title = document.getElementById("edit-title").value.trim();
-    const body = document.getElementById("edit-body").value.trim();
+    const modal = elements.modals.editPost;
+    const postId = modal.postId.textContent;
+    const title = modal.title.value.trim();
+    const body = modal.body.value.trim();
 
     // Basic validation
     if (!title || !body) {
@@ -139,33 +182,45 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
 
-    // Find and update post in our local data
-    const postIndex = allPosts.findIndex((p) => p.id.toString() === postId);
-    if (postIndex !== -1) {
-      allPosts[postIndex].title = title;
-      allPosts[postIndex].body = body;
+    // Update post in our local data
+    updatePost(postId, { title, body });
 
-      // Update filtered posts as well
-      const filteredIndex = filteredPosts.findIndex(
-        (p) => p.id.toString() === postId
+    // Show success message
+    modal.successMessage.classList.remove("d-none");
+
+    // Auto-hide the success message after 3 seconds
+    setTimeout(() => {
+      modal.successMessage.classList.add("d-none");
+      modal.instance.hide();
+    }, 3000);
+  };
+
+  /**
+   * Update a post in both allPosts and filteredPosts arrays
+   * @param {string|number} postId - The post ID to update
+   * @param {Object} updates - Object with updated properties
+   */
+  const updatePost = (postId, updates) => {
+    // Update in allPosts
+    const postIndex = state.allPosts.findIndex(
+      (p) => p.id.toString() === postId.toString()
+    );
+    if (postIndex !== -1) {
+      state.allPosts[postIndex] = { ...state.allPosts[postIndex], ...updates };
+
+      // Update in filteredPosts if present
+      const filteredIndex = state.filteredPosts.findIndex(
+        (p) => p.id.toString() === postId.toString()
       );
       if (filteredIndex !== -1) {
-        filteredPosts[filteredIndex].title = title;
-        filteredPosts[filteredIndex].body = body;
+        state.filteredPosts[filteredIndex] = {
+          ...state.filteredPosts[filteredIndex],
+          ...updates,
+        };
       }
-
-      // Show success message
-      const successMessage = document.getElementById("edit-success-message");
-      successMessage.classList.remove("d-none");
 
       // Re-render current page
       renderPaginatedPosts();
-
-      // Auto-hide the success message after 3 seconds
-      setTimeout(() => {
-        successMessage.classList.add("d-none");
-        editPostModal.hide();
-      }, 3000);
     }
   };
 
@@ -174,49 +229,59 @@ document.addEventListener("DOMContentLoaded", async () => {
    * @param {Object} post - Post object
    */
   const showDeleteConfirmation = (post) => {
-    document.getElementById("delete-post-id").textContent = post.id;
+    const modal = elements.modals.deleteConfirm;
 
-    // Hide success message if shown previously
-    document.getElementById("delete-success-message").classList.add("d-none");
+    modal.postId.textContent = post.id;
+    modal.successMessage.classList.add("d-none");
+    modal.confirmBtn.disabled = false;
 
-    deleteConfirmModal.show();
+    modal.instance.show();
   };
 
   /**
    * Confirm post deletion
    */
   const confirmPostDelete = () => {
-    const postId = document.getElementById("delete-post-id").textContent;
+    const modal = elements.modals.deleteConfirm;
+    const postId = modal.postId.textContent;
 
-    // Find and remove post from our local data
-    const postIndex = allPosts.findIndex((p) => p.id.toString() === postId);
+    // Delete post from arrays
+    deletePost(postId);
+
+    // Show success message
+    modal.successMessage.classList.remove("d-none");
+    modal.confirmBtn.disabled = true;
+
+    // Auto-hide the success message after 3 seconds
+    setTimeout(() => {
+      modal.successMessage.classList.add("d-none");
+      modal.confirmBtn.disabled = false;
+      modal.instance.hide();
+    }, 3000);
+  };
+
+  /**
+   * Delete a post from both allPosts and filteredPosts arrays
+   * @param {string|number} postId - The post ID to delete
+   */
+  const deletePost = (postId) => {
+    // Remove from allPosts
+    const postIndex = state.allPosts.findIndex(
+      (p) => p.id.toString() === postId.toString()
+    );
     if (postIndex !== -1) {
-      allPosts.splice(postIndex, 1);
+      state.allPosts.splice(postIndex, 1);
 
-      // Update filtered posts as well
-      const filteredIndex = filteredPosts.findIndex(
-        (p) => p.id.toString() === postId
+      // Remove from filteredPosts if present
+      const filteredIndex = state.filteredPosts.findIndex(
+        (p) => p.id.toString() === postId.toString()
       );
       if (filteredIndex !== -1) {
-        filteredPosts.splice(filteredIndex, 1);
+        state.filteredPosts.splice(filteredIndex, 1);
       }
-
-      // Show success message
-      const successMessage = document.getElementById("delete-success-message");
-      successMessage.classList.remove("d-none");
-
-      // Disable delete button
-      document.getElementById("confirm-delete-btn").disabled = true;
 
       // Re-render current page
       renderPaginatedPosts();
-
-      // Auto-hide the success message after 3 seconds
-      setTimeout(() => {
-        successMessage.classList.add("d-none");
-        document.getElementById("confirm-delete-btn").disabled = false;
-        deleteConfirmModal.hide();
-      }, 3000);
     }
   };
 
@@ -227,8 +292,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       UI.hideError();
       UI.toggleLoading(true);
-      allPosts = await api.getPosts();
-      filteredPosts = [...allPosts];
+      state.allPosts = await api.getPosts();
+      state.filteredPosts = [...state.allPosts];
       renderPaginatedPosts();
     } catch (error) {
       UI.showError(`Failed to load posts: ${error.message}`);
@@ -239,14 +304,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   /**
-   * Render posts for the current page
+   * Render posts for the current page with pagination
    */
   const renderPaginatedPosts = () => {
-    const totalPages = Math.ceil(filteredPosts.length / ITEMS_PER_PAGE);
-    currentPage = Math.min(currentPage, totalPages || 1);
+    const totalPages = Math.ceil(state.filteredPosts.length / ITEMS_PER_PAGE);
+    state.currentPage = Math.min(state.currentPage, totalPages || 1);
 
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const postsToShow = filteredPosts.slice(
+    const startIndex = (state.currentPage - 1) * ITEMS_PER_PAGE;
+    const postsToShow = state.filteredPosts.slice(
       startIndex,
       startIndex + ITEMS_PER_PAGE
     );
@@ -261,26 +326,32 @@ document.addEventListener("DOMContentLoaded", async () => {
    * @param {number} totalPages - Total number of pages
    */
   const renderPagination = (totalPages) => {
-    paginationControls.innerHTML = "";
+    elements.paginationControls.innerHTML = "";
 
     if (totalPages <= 1) {
       return;
     }
 
-    const pagination = UI.createPagination(currentPage, totalPages, (page) => {
-      currentPage = page;
-      renderPaginatedPosts();
-      window.scrollTo(0, 0);
-    });
+    const pagination = UI.createPagination(
+      state.currentPage,
+      totalPages,
+      (page) => {
+        state.currentPage = page;
+        renderPaginatedPosts();
+        window.scrollTo(0, 0);
+      }
+    );
 
-    paginationControls.appendChild(pagination);
+    elements.paginationControls.appendChild(pagination);
   };
 
   /**
    * Render posts in the table
    * @param {Array} posts - Posts to render
-   */ const renderPosts = (posts) => {
-    postsTableBody.innerHTML = "";
+   */
+  const renderPosts = (posts) => {
+    // Use document fragment for better performance
+    const fragment = document.createDocumentFragment();
 
     if (posts.length === 0) {
       const row = document.createElement("tr");
@@ -289,139 +360,134 @@ document.addEventListener("DOMContentLoaded", async () => {
       cell.colSpan = 5;
       cell.className = "text-center py-4";
       row.appendChild(cell);
-      postsTableBody.appendChild(row);
-      return;
+      fragment.appendChild(row);
+    } else {
+      posts.forEach((post) => {
+        fragment.appendChild(createPostRow(post));
+      });
     }
 
-    posts.forEach((post) => {
-      const row = document.createElement("tr");
+    // Replace all content at once for better performance
+    elements.postsTableBody.innerHTML = "";
+    elements.postsTableBody.appendChild(fragment);
+  };
 
-      // Check if post body contains "rerum"
-      const containsRerum = post.body.toLowerCase().includes(KEYWORD_HIGHLIGHT);
-      if (containsRerum) {
-        row.classList.add("rerum-highlight");
-      }
+  /**
+   * Create a table row for a post
+   * @param {Object} post - The post object
+   * @returns {HTMLElement} - The created row element
+   */
+  const createPostRow = (post) => {
+    const row = document.createElement("tr");
 
-      // Create cells using the UI helper
-      const idCell = UI.createElement("td", {}, post.id.toString());
-      const userIdCell = UI.createElement("td", {}, post.userId.toString());
+    // Check if post body contains "rerum"
+    const containsRerum = post.body.toLowerCase().includes(KEYWORD_HIGHLIGHT);
+    if (containsRerum) {
+      row.classList.add("rerum-highlight");
+    }
 
-      // Title cell
-      const titleCell = UI.createElement("td", {
-        title: post.title,
-      });
-      titleCell.textContent = UI.truncateText(post.title, 60);
+    // Create cells using the UI helper
+    const idCell = UI.createElement("td", {}, post.id.toString());
+    const userIdCell = UI.createElement("td", {}, post.userId.toString());
 
-      // Body cell with tooltip
-      const bodyCell = UI.createElement("td", {
-        class: "post-body custom-tooltip",
-      });
+    // Title cell
+    const titleCell = UI.createElement("td", {
+      title: post.title,
+    });
+    titleCell.textContent = UI.truncateText(post.title, 60);
 
-      // Properly sanitize content before inserting HTML
-      const sanitizedBody = UI.sanitizeHTML(post.body);
-      const truncatedBody = UI.truncateText(sanitizedBody, 80);
-      bodyCell.innerHTML = UI.highlightText(truncatedBody, KEYWORD_HIGHLIGHT);
+    // Body cell with tooltip
+    const bodyCell = UI.createElement("td", {
+      class: "post-body custom-tooltip",
+    });
 
-      // Add tooltip content for body
-      const bodyTooltip = UI.createElement("div", {
-        class: "tooltip-content",
-      });
-      bodyTooltip.innerHTML = UI.highlightText(
-        sanitizedBody,
-        KEYWORD_HIGHLIGHT
-      );
-      bodyCell.appendChild(bodyTooltip);
+    // Properly sanitize content before inserting HTML
+    const sanitizedBody = UI.sanitizeHTML(post.body);
+    const truncatedBody = UI.truncateText(sanitizedBody, 80);
+    bodyCell.innerHTML = UI.highlightText(truncatedBody, KEYWORD_HIGHLIGHT);
 
-      // Actions cell with multiple buttons
-      const actionsCell = UI.createElement("td", {});
+    // Add tooltip content for body
+    const bodyTooltip = UI.createElement("div", {
+      class: "tooltip-content",
+    });
+    bodyTooltip.innerHTML = UI.highlightText(sanitizedBody, KEYWORD_HIGHLIGHT);
+    bodyCell.appendChild(bodyTooltip);
 
-      // Comments button with icon and tooltip
-      const viewCommentsBtn = UI.createElement("button", {
-        class: "btn btn-info btn-action action-tooltip",
+    // Actions cell with multiple buttons
+    const actionsCell = UI.createElement("td", {});
+
+    // Create and append action buttons
+    const actionButtons = createActionButtons(post);
+    actionButtons.forEach((button) => actionsCell.appendChild(button));
+
+    // Append cells to row
+    row.appendChild(idCell);
+    row.appendChild(userIdCell);
+    row.appendChild(titleCell);
+    row.appendChild(bodyCell);
+    row.appendChild(actionsCell);
+
+    return row;
+  };
+
+  /**
+   * Create action buttons for a post
+   * @param {Object} post - The post object
+   * @returns {Array} - Array of button elements
+   */
+  const createActionButtons = (post) => {
+    // Define button configurations
+    const buttonConfigs = [
+      {
+        type: "comments",
+        class: "btn-info",
+        icon: "bi-chat-dots-fill",
+        tooltip: "View Comments",
+        handler: () => loadComments(post.id),
+      },
+      {
+        type: "details",
+        class: "btn-primary",
+        icon: "bi-eye-fill",
+        tooltip: "View Details",
+        handler: () => showPostDetails(post),
+      },
+      {
+        type: "edit",
+        class: "btn-warning",
+        icon: "bi-pencil-fill",
+        tooltip: "Edit Post",
+        handler: () => showEditPostModal(post),
+      },
+      {
+        type: "delete",
+        class: "btn-danger",
+        icon: "bi-trash-fill",
+        tooltip: "Delete Post",
+        handler: () => showDeleteConfirmation(post),
+      },
+    ];
+
+    // Create buttons based on configurations
+    return buttonConfigs.map((config) => {
+      const button = UI.createElement("button", {
+        class: `btn ${config.class} btn-action action-tooltip`,
         "data-post-id": post.id,
+        "data-action-type": config.type,
       });
-      viewCommentsBtn.innerHTML = '<i class="bi bi-chat-dots-fill"></i>';
 
-      const commentsBtnTooltip = UI.createElement(
+      button.innerHTML = `<i class="bi ${config.icon}"></i>`;
+
+      const tooltipSpan = UI.createElement(
         "span",
-        {
-          class: "action-tooltip-text",
-        },
-        "View Comments"
+        { class: "action-tooltip-text" },
+        config.tooltip
       );
-      viewCommentsBtn.appendChild(commentsBtnTooltip);
 
-      viewCommentsBtn.addEventListener("click", () => loadComments(post.id));
+      button.appendChild(tooltipSpan);
+      button.addEventListener("click", config.handler);
 
-      // Edit button with icon and tooltip
-      const editBtn = UI.createElement("button", {
-        class: "btn btn-warning btn-action action-tooltip",
-        "data-post-id": post.id,
-      });
-      editBtn.innerHTML = '<i class="bi bi-pencil-fill"></i>';
-
-      const editBtnTooltip = UI.createElement(
-        "span",
-        {
-          class: "action-tooltip-text",
-        },
-        "Edit Post"
-      );
-      editBtn.appendChild(editBtnTooltip);
-
-      editBtn.addEventListener("click", () => showEditPostModal(post));
-
-      // Delete button with icon and tooltip
-      const deleteBtn = UI.createElement("button", {
-        class: "btn btn-danger btn-action action-tooltip",
-        "data-post-id": post.id,
-      });
-      deleteBtn.innerHTML = '<i class="bi bi-trash-fill"></i>';
-
-      const deleteBtnTooltip = UI.createElement(
-        "span",
-        {
-          class: "action-tooltip-text",
-        },
-        "Delete Post"
-      );
-      deleteBtn.appendChild(deleteBtnTooltip);
-
-      deleteBtn.addEventListener("click", () => showDeleteConfirmation(post));
-
-      // View details button with icon and tooltip
-      const viewDetailsBtn = UI.createElement("button", {
-        class: "btn btn-primary btn-action action-tooltip",
-        "data-post-id": post.id,
-      });
-      viewDetailsBtn.innerHTML = '<i class="bi bi-eye-fill"></i>';
-
-      const viewDetailsBtnTooltip = UI.createElement(
-        "span",
-        {
-          class: "action-tooltip-text",
-        },
-        "View Details"
-      );
-      viewDetailsBtn.appendChild(viewDetailsBtnTooltip);
-
-      viewDetailsBtn.addEventListener("click", () => showPostDetails(post));
-
-      // Append buttons to actions cell
-      actionsCell.appendChild(viewCommentsBtn);
-      actionsCell.appendChild(viewDetailsBtn);
-      actionsCell.appendChild(editBtn);
-      actionsCell.appendChild(deleteBtn);
-
-      // Append cells to row
-      row.appendChild(idCell);
-      row.appendChild(userIdCell);
-      row.appendChild(titleCell);
-      row.appendChild(bodyCell);
-      row.appendChild(actionsCell);
-
-      // Append row to table body
-      postsTableBody.appendChild(row);
+      return button;
     });
   };
 
@@ -430,22 +496,23 @@ document.addEventListener("DOMContentLoaded", async () => {
    * @param {number} postId - ID of the post
    */
   const loadComments = async (postId) => {
+    const modal = elements.modals.comments;
+
     try {
-      document.getElementById("modal-post-id").textContent = postId;
-      const commentsContainer = document.getElementById("comments-container");
-      commentsContainer.innerHTML =
+      modal.postIdElement.textContent = postId;
+      modal.commentsContainer.innerHTML =
         '<div class="text-center"><div class="spinner-border"></div></div>';
 
       // Show the modal first for better UX
-      commentsModal.show();
+      modal.instance.show();
 
-      // Fetch comments after modal is visible for better perceived performance
+      // Fetch comments after modal is visible
       setTimeout(async () => {
         try {
           const comments = await api.getComments(postId);
-          renderComments(comments, commentsContainer);
+          renderComments(comments, modal.commentsContainer);
         } catch (error) {
-          commentsContainer.innerHTML =
+          modal.commentsContainer.innerHTML =
             '<div class="alert alert-danger">Failed to load comments</div>';
           console.error("Error loading comments:", error);
         }
@@ -462,59 +529,72 @@ document.addEventListener("DOMContentLoaded", async () => {
    * @param {HTMLElement} container - Container element
    */
   const renderComments = (comments, container) => {
-    container.innerHTML = "";
+    // Use document fragment for better performance
+    const fragment = document.createDocumentFragment();
 
     if (!comments || comments.length === 0) {
-      container.innerHTML = '<p class="text-center">No comments found</p>';
-      return;
+      const noCommentsEl = UI.createElement(
+        "p",
+        { class: "text-center" },
+        "No comments found"
+      );
+      fragment.appendChild(noCommentsEl);
+    } else {
+      comments.forEach((comment) => {
+        fragment.appendChild(createCommentElement(comment));
+      });
     }
 
-    comments.forEach((comment) => {
-      const commentElement = UI.createElement("div", {
-        class: "card mb-2",
-      });
+    // Replace all content at once
+    container.innerHTML = "";
+    container.appendChild(fragment);
+  };
 
-      const commentBody = UI.createElement("div", {
-        class: "card-body",
-      });
-
-      const commentTitle = UI.createElement(
-        "h5",
-        {
-          class: "card-title",
-        },
-        UI.sanitizeHTML(comment.name)
-      );
-
-      const commentEmail = UI.createElement(
-        "h6",
-        {
-          class: "card-subtitle mb-2 text-muted",
-        },
-        UI.sanitizeHTML(comment.email)
-      );
-
-      const commentText = UI.createElement(
-        "p",
-        {
-          class: "card-text",
-        },
-        UI.sanitizeHTML(comment.body)
-      );
-
-      commentBody.appendChild(commentTitle);
-      commentBody.appendChild(commentEmail);
-      commentBody.appendChild(commentText);
-      commentElement.appendChild(commentBody);
-      container.appendChild(commentElement);
+  /**
+   * Create a comment element
+   * @param {Object} comment - The comment object
+   * @returns {HTMLElement} - The created comment element
+   */
+  const createCommentElement = (comment) => {
+    const commentElement = UI.createElement("div", {
+      class: "card mb-2",
     });
+
+    const commentBody = UI.createElement("div", {
+      class: "card-body",
+    });
+
+    const commentTitle = UI.createElement(
+      "h5",
+      { class: "card-title" },
+      UI.sanitizeHTML(comment.name)
+    );
+
+    const commentEmail = UI.createElement(
+      "h6",
+      { class: "card-subtitle mb-2 text-muted" },
+      UI.sanitizeHTML(comment.email)
+    );
+
+    const commentText = UI.createElement(
+      "p",
+      { class: "card-text" },
+      UI.sanitizeHTML(comment.body)
+    );
+
+    commentBody.appendChild(commentTitle);
+    commentBody.appendChild(commentEmail);
+    commentBody.appendChild(commentText);
+    commentElement.appendChild(commentBody);
+
+    return commentElement;
   };
 
   /**
    * Filter posts based on search term
    */
   const filterPosts = () => {
-    const searchTerm = searchInput.value.trim().toLowerCase();
+    const searchTerm = elements.searchInput.value.trim().toLowerCase();
 
     // Validate input - limit length and disallow certain characters
     if (searchTerm.length > 100) {
@@ -530,40 +610,52 @@ document.addEventListener("DOMContentLoaded", async () => {
     UI.hideError();
 
     if (!searchTerm) {
-      filteredPosts = [...allPosts];
+      state.filteredPosts = [...state.allPosts];
     } else {
-      filteredPosts = allPosts.filter(
+      state.filteredPosts = state.allPosts.filter(
         (post) =>
           post.title.toLowerCase().includes(searchTerm) ||
           post.body.toLowerCase().includes(searchTerm)
       );
     }
 
-    currentPage = 1; // Reset to first page on new search
+    state.currentPage = 1; // Reset to first page on new search
     renderPaginatedPosts();
   };
 
-  // Event listeners
-  searchBtn.addEventListener("click", filterPosts);
-  searchInput.addEventListener("keyup", (e) => {
-    if (e.key === "Enter") {
-      filterPosts();
-    }
-  });
+  /**
+   * Initialize the application
+   */
+  const init = async () => {
+    // Initialize Bootstrap modals
+    initModals();
 
-  // Debounced search for input changes
-  const debouncedFilter = UI.debounce(() => {
-    if (
-      searchInput.value.trim().length >= 3 ||
-      searchInput.value.trim().length === 0
-    ) {
-      filterPosts();
-    }
-  }, 500);
+    // Set up event listeners for modals
+    setupModalEvents();
 
-  searchInput.addEventListener("input", debouncedFilter);
+    // Set up search functionality
+    elements.searchBtn.addEventListener("click", filterPosts);
 
-  // Initial load
-  await loadPosts();
-  setupModals();
+    elements.searchInput.addEventListener("keyup", (e) => {
+      if (e.key === "Enter") {
+        filterPosts();
+      }
+    });
+
+    // Debounced search for better performance
+    const debouncedFilter = UI.debounce(() => {
+      const searchLength = elements.searchInput.value.trim().length;
+      if (searchLength >= 3 || searchLength === 0) {
+        filterPosts();
+      }
+    }, 500);
+
+    elements.searchInput.addEventListener("input", debouncedFilter);
+
+    // Load posts data
+    await loadPosts();
+  };
+
+  // Start the application
+  init();
 });
